@@ -1,7 +1,7 @@
 # ApplicationController
 
 ## 概要
-ApplicationControllerは、以下のような処理を実行する
+ApplicationControllerは、以下のような処理を実行します。
 
 ① 受信メッセージのプロパティで指定されたプロセスを実行する
 
@@ -20,4 +20,4 @@ ApplicationControllerは、以下のような処理を実行する
 お気づきの点があれば、ぜひIssueにてお知らせください。
 
 ## LICENSE
-This project is licensed under the MIT License, see the LICENSE file for details
+This project is licensed under the MIT License, see the LICENSE file for details.
