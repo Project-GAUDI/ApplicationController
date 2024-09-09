@@ -38,7 +38,35 @@ ApplicationControllerは、以下のような処理を実行する<br>
 ![schematic diagram](./docs/img/schematic_diagram.drawio.png)
 
 ## Quick Start
-鋭意製作中
+1. Personal Accese tokenを作成
+（参考: [個人用アクセス トークンを管理する](https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)）
+
+2. リポジトリをクローン
+```
+git clone https://github.com/Project-GAUDI/ApplicationController.git
+```
+
+3. ./src/nuget_template.configの<GITHUB_USERNAME>と<PERSONAL_ACCESS_TOKEN>を自身のユーザー名とPersonal Accese tokenに書き換えて、ファイル名をnuget.configに変更してください
+
+4. Dockerイメージをビルド
+```
+docker image build -t <IMAGE_NAME> ./ApplicationController/src/
+```
+例）
+```
+docker image build -t ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION> ./ApplicationController/src/
+```
+
+5. Dockerイメージをコンテナレジストリにプッシュ
+```
+docker push <IMAGE_NAME>
+```
+例）
+```
+docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
+```
+
+6. Azure IoT edgeで利用
 
 ## イメージのURL
 準備中
