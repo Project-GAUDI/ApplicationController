@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using TICO.GAUDI.Commons;
 
-
-namespace ApplicationController.Test
+namespace IotedgeV2ApplicationController.Test
 {
 
     public class ApplicationController_ExecuteProcess : ApplicationController_TesterBase
@@ -21,7 +20,7 @@ namespace ApplicationController.Test
         [Fact(DisplayName = "正常系:Excuteの引数のprocess_nameがprocessesに存在する値→正常終了")]
         public async void ProcessNameInProcesses_Succeeded()
         {
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -34,7 +33,7 @@ namespace ApplicationController.Test
         {
             myDesiredProperties.processes[0].application.type = MyDesiredProperties.Process.AppSetting.Protocol.NotSelected;
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -47,7 +46,7 @@ namespace ApplicationController.Test
         [Fact(DisplayName = "正常系:ApplicationClientのメソッドでエラーが起きない設定で実行→正常終了")]
         public async void AllParamsIsDefault_Succeeded()
         {
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -58,7 +57,7 @@ namespace ApplicationController.Test
         public async void AppClientInitializeIsError_ExceptionThrown()
         {
             factory.SetErrorMethod("Initialize");
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -72,7 +71,7 @@ namespace ApplicationController.Test
         public async void AppClientConnectIsError_ExceptionThrown()
         {
             factory.SetErrorMethod("Connect");
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -86,7 +85,7 @@ namespace ApplicationController.Test
         public async void AppClientSendRequestIsError_ExceptionThrown()
         {
             factory.SetErrorMethod("SendRequest");
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -100,7 +99,7 @@ namespace ApplicationController.Test
         public async void AppClientDisconnectIsError_ExceptionThrown()
         {
             factory.SetErrorMethod("Disconnect");
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -114,7 +113,7 @@ namespace ApplicationController.Test
         public async void ResponseIsNotJson_ExceptionThrown()
         {
             factory.SetErrorMethod("SendRequest:ReturnNonJson");
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 

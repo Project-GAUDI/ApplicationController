@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using TICO.GAUDI.Commons;
 
-
-namespace ApplicationController.Test
+namespace IotedgeV2ApplicationController.Test
 {
 
     public class ApplicationController_Constructor : ApplicationController_TesterBase
@@ -20,7 +19,7 @@ namespace ApplicationController.Test
         [Fact(DisplayName = "正常系:実行→ApplicationControllerインスタンス生成")]
         public void AllParamsIsDefault_InstanceCreated()
         {
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             Assert.IsAssignableFrom<ApplicationController>(result);
         }
 
@@ -29,7 +28,7 @@ namespace ApplicationController.Test
         {
             Assert.Throws<Exception>(() =>
             {
-                ApplicationController result = new ApplicationController(null, env, myDesiredProperties.processes, client, body, properties);
+                ApplicationController result = new ApplicationController(null,sender, env, myDesiredProperties.processes, body, properties);
             });
         }
 
@@ -38,16 +37,7 @@ namespace ApplicationController.Test
         {
             Assert.Throws<Exception>(() =>
             {
-                ApplicationController result = new ApplicationController(factory, null, myDesiredProperties.processes, client, body, properties);
-            });
-        }
-
-        [Fact(DisplayName = "異常系:client(IModuleClient)がnull→例外")]
-        public void ClientIsNull_ExceptionThrown()
-        {
-            Assert.Throws<Exception>(() =>
-            {
-                ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, null, body, properties);
+                ApplicationController result = new ApplicationController(factory,sender, null, myDesiredProperties.processes, body, properties);
             });
         }
 
@@ -56,7 +46,7 @@ namespace ApplicationController.Test
         {
             Assert.Throws<Exception>(() =>
             {
-                ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, null, properties);
+                ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, null, properties);
             });
         }
 
@@ -66,7 +56,7 @@ namespace ApplicationController.Test
             body = "Bad format.";
             var ex = Assert.Throws<Exception>(() =>
             {
-                ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+                ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             });
             Assert.Equal("body is not JSON format.", ex.Message);
         }
@@ -77,7 +67,7 @@ namespace ApplicationController.Test
         {
             Assert.Throws<Exception>(() =>
             {
-                ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, null);
+                ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, null);
             });
         }
 

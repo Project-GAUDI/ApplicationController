@@ -4,8 +4,7 @@ using Xunit.Abstractions;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-
-namespace ApplicationController.Test
+namespace IotedgeV2ApplicationController.Test
 {
 
     public class HttpApplicationClient_IsConnected

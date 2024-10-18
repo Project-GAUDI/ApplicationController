@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 using System.Threading;
 using System.Collections.Generic;
 
-namespace ApplicationController.Test
+namespace IotedgeV2ApplicationController.Test
 {
 
     [Collection(nameof(EnvironmentInfo_CreateInstance))]

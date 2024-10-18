@@ -1,11 +1,12 @@
 using System;
 
-namespace ApplicationController
+namespace IotedgeV2ApplicationController.Test
 {
     public class TestApplicationClientFactory : IApplicationClientFactory
     {
         private string _status = null;
         private string _method = null;
+        private string _response = null;
 
         public IApplicationClient CreateInstance(MyDesiredProperties.Process.AppSetting.Protocol protocol)
         {
@@ -31,6 +32,11 @@ namespace ApplicationController
                 client.SetParam("method", _method);
             }
 
+            if (null != client && null != _response)
+            {
+                client.SetParam("response", _response);
+            }
+
             return client;
         }
 
@@ -42,6 +48,11 @@ namespace ApplicationController
         public void SetErrorMethod(string method)
         {
             _method = method;
+        }
+
+        public void SetResponse(string response)
+        {
+            _response = response;
         }
     }
 }
