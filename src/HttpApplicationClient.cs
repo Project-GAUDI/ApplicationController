@@ -5,17 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using TICO.GAUDI.Commons;
-[assembly: InternalsVisibleToAttribute("ApplicationController.Test")]
 
-namespace ApplicationController
+namespace IotedgeV2ApplicationController
 {
     class HttpApplicationClient : IApplicationClient
     {
-        private static Logger MyLogger { get; } = Logger.GetLogger(typeof(HttpApplicationClient));
+        private static ILogger MyLogger { get; } = LoggerFactory.GetLogger(typeof(HttpApplicationClient));
 
         protected string _url = null;
         protected int _timeout = 10;
@@ -25,6 +23,7 @@ namespace ApplicationController
 
         public virtual bool Initialize(EnvironmentInfo env, MyDesiredProperties.Process.AppSetting appSetting, string body, IDictionary<string, string> properties)
         {
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: Initialize");
             bool retStatus = true;
 
             string timeout = env.HttpTimeout;
@@ -40,12 +39,13 @@ namespace ApplicationController
                 targetURL = targetURL.Replace(param.base_name, replaceString);
             }
             SetParam("url", targetURL);
-
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: Initialize");
             return retStatus;
         }
 
         private string GetReplaceString(MyDesiredProperties.Process.AppSetting.ReplaceParam param, string body, IDictionary<string, string> properties)
         {
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: GetReplaceString");
             string retString = "";
 
             switch (param.source_data_type)
@@ -57,7 +57,9 @@ namespace ApplicationController
 
                     if (2 <= cnt)
                     {
-                        throw new Exception($"Multiple tokens matched.");
+                        var errmsg = $"Multiple tokens matched.";
+                        MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: GetReplaceString caused by {errmsg}");
+                        throw new Exception(errmsg);
                     }
                     else if (1 == cnt)
                     {
@@ -81,7 +83,7 @@ namespace ApplicationController
                 default:
                     break;
             }
-
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: GetReplaceString");
             return retString;
         }
 
@@ -92,12 +94,16 @@ namespace ApplicationController
 
         public virtual void SetParam(string key, string value)
         {
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: SetParam");
+            var errmsg = "";
             switch (key)
             {
                 case "url":
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new Exception($"url: Must be input.(value={value})");
+                        errmsg = $"url: Must be input.(value={value}).";
+                        MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: SetParam caused by {errmsg}");
+                        throw new Exception(errmsg);
                     }
                     _url = value;
                     break;
@@ -106,18 +112,25 @@ namespace ApplicationController
                     bool isParse = int.TryParse(value, out parsedValue);
                     if (false == isParse)
                     {
-                        throw new Exception($"timeout: Illegal data type.(value={value})");
+                        errmsg = $"timeout: Parse error.(value={value})";
+                        MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: SetParam caused by {errmsg}");
+                        throw new Exception(errmsg);
                     }
                     if (parsedValue <= 0)
                     {
-                        throw new Exception($"timeout: Out of range.(value={value})");
+                        errmsg = $"timeout: Out of range.(value={value})";
+                        MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: SetParam caused by {errmsg}");
+                        throw new Exception(errmsg);
                     }
 
                     _timeout = parsedValue;
                     break;
                 default:
-                    throw new Exception($"key({key}) not supported.");
+                    errmsg = $"key({key}) not supported.";
+                    MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: SetParam caused by {errmsg}");
+                    throw new Exception(errmsg);
             }
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: SetParam");
         }
 
         protected static IHttpClientFactory GetFactory()
@@ -126,21 +139,25 @@ namespace ApplicationController
             {
                 MyHttpClientFactory = new ServiceCollection().AddHttpClient().BuildServiceProvider().GetService<IHttpClientFactory>();
             }
-
             return MyHttpClientFactory;
         }
 
         public virtual bool Connect()
         {
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: Connect");
             if (string.IsNullOrEmpty(_url))
             {
-                MyLogger.WriteLog(Logger.LogLevel.ERROR, $"URL is not set.");
+                var errmsg = $"URL is not set.";
+                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"{errmsg}", true);
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Connect caused by {errmsg}");
                 return false;
             }
 
             if (IsConnected())
             {
-                MyLogger.WriteLog(Logger.LogLevel.ERROR, $"Already connected.");
+                var errmsg = $"Already connected.";
+                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"{errmsg}", true);
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Connect caused by {errmsg}");
                 return false;
             }
 
@@ -150,6 +167,9 @@ namespace ApplicationController
                 MyHttpClient = fact.CreateClient();
                 if (null == MyHttpClient)
                 {
+                    var errmsg = $"MyHttpClient is null.";
+                    MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"{errmsg}", true);
+                    MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Connect caused by {errmsg}");
                     return false;
                 }
 
@@ -158,34 +178,40 @@ namespace ApplicationController
             }
             catch (Exception ex)
             {
-                MyLogger.WriteLog(Logger.LogLevel.ERROR, $"Http connect error. timeout:{_timeout}\n detail:{ex.Message}");
+                var errmsg = $"Http connect error. timeout:{_timeout}\n detail:{ex.Message}";
+                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"{errmsg}", true);
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Connect caused by {errmsg}");
                 return false;
             }
-
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: Connect");
             return true;
         }
 
         public virtual async Task<string> SendRequest(string inputJson)
         {
-            MyLogger.WriteLog(Logger.LogLevel.DEBUG, $"SendRequest() url={_url}");
-            if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: SendRequest");
+
+            MyLogger.WriteLog(ILogger.LogLevel.DEBUG, $"SendRequest() url={_url}");
+            if (MyLogger.IsLogLevelToOutput(ILogger.LogLevel.TRACE))
             {
-                MyLogger.WriteLog(Logger.LogLevel.TRACE, $"SendRequest() inputjson={inputJson}");
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"SendRequest() inputjson={inputJson}");
             }
 
             var content = new StringContent(inputJson, Encoding.UTF8, "application/json");
             var resResult = await MyHttpClient.PostAsync(_url, content);
 
-            MyLogger.WriteLog(Logger.LogLevel.DEBUG, $"SendRequest() Statuscode={(int)resResult.StatusCode}, ReasonPhrase={resResult.ReasonPhrase}");
-            if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
+            MyLogger.WriteLog(ILogger.LogLevel.DEBUG, $"SendRequest() Statuscode={(int)resResult.StatusCode}, ReasonPhrase={resResult.ReasonPhrase}");
+            if (MyLogger.IsLogLevelToOutput(ILogger.LogLevel.TRACE))
             {
-                MyLogger.WriteLog(Logger.LogLevel.TRACE, $"SendRequest() response={resResult}");
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"SendRequest() response={resResult}");
             }
 
             // エラー判定
             if (System.Net.HttpStatusCode.OK != resResult.StatusCode)
             {
-                throw new Exception($"HttpApplication request error.  Url={_url}, StatusCode={(int)resResult.StatusCode}, ReasonPhrase={resResult.ReasonPhrase}");
+                var errmsg = $"HttpApplication request error.  Url={_url}, StatusCode={(int)resResult.StatusCode}, ReasonPhrase={resResult.ReasonPhrase}.";
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: SendRequest caused by {errmsg}");
+                throw new Exception(errmsg);
             }
 
             var bodystr = await resResult.Content.ReadAsStringAsync();
@@ -194,13 +220,15 @@ namespace ApplicationController
             JObject jobj = (JObject)JsonConvert.DeserializeObject(bodystr);
             bodystr = JsonConvert.SerializeObject(jobj, Formatting.None);
 
-            if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
+            if (MyLogger.IsLogLevelToOutput(ILogger.LogLevel.TRACE))
             {
-                MyLogger.WriteLog(Logger.LogLevel.TRACE, $"SendRequest() response_body={bodystr}");
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"SendRequest() response_body={bodystr}");
             }
 
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: SendRequest");
             return bodystr;
         }
+
         public virtual void Disconnect()
         {
             if (IsConnected())

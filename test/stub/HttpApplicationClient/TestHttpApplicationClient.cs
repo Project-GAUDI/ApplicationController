@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace ApplicationController
+namespace IotedgeV2ApplicationController.Test
 {
     class TestHttpApplicationClient : HttpApplicationClient
     {
         private string _status = null;
         private string _method = null;
+        private string _response = null;
 
         public override void SetParam(string key, string value)
         {
@@ -19,6 +20,9 @@ namespace ApplicationController
                     break;
                 case "method":
                     _method = value;
+                    break;
+                case "response":
+                    _response = value;
                     break;
                 default:
                     base.SetParam(key, value);
@@ -65,7 +69,12 @@ namespace ApplicationController
             }
 
             await Task.CompletedTask;
-            return $"{{\"status\":\"{_status}\",\"url\":\"{_url}\",\"timeout\":{_timeout}}}";
+            string response = $"{{\"status\":\"{_status}\",\"url\":\"{_url}\",\"timeout\":{_timeout}}}";
+            if (null != _response)
+            {
+                response = _response;
+            }
+            return response;
         }
 
         public override void Disconnect()
