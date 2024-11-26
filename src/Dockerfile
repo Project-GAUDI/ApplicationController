@@ -13,17 +13,14 @@ USER root
 COPY templates/entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
 
-ARG TAGS
 RUN { \
     echo "module name : ApplicationController"; \
-    echo "module version : ${TAGS}"; \
+    echo "module version : 6.0.0"; \
 } > ./application.info
 
 RUN useradd -ms /bin/bash moduleuser
 USER moduleuser
 
-# LABEL org.opencontainers.image.source=https://github.com/Project-GAUDI/ApplicationController
 LABEL org.opencontainers.image.description="ApplicationController is an Azure IoT edge module that triggers message reception, executes a pre-configured process and outputs results."
-# LABEL org.opencontainers.image.licenses=MIT
 
 ENTRYPOINT ["/app/entrypoint.sh"]

@@ -10,13 +10,20 @@
   * [環境変数](#環境変数)
   * [Desired Properties](#desired-properties)
   * [Create Option](#create-option)
+  * [startupOrder](#startuporder)
 * [受信メッセージ](#受信メッセージ)
   * [Message Body](#message-body)
   * [Message Properties](#message-properties)
+* [Http Application実行](#http-application実行)
+  * [リクエスト](#リクエスト)
+  * [レスポンス](#レスポンス)
 * [送信メッセージ](#送信メッセージ)
   * [Message Body](#SendMessageBody)
   * [Message Properties](#SendMessageProperties)
 * [Direct Method](#direct-method)
+  * [SetLogLevel](#setloglevel)
+  * [GetLogLevel](#getloglevel)
+* [ログ出力内容](#ログ出力内容)
 * [ユースケース](#ユースケース)
   * [ケース ①](#Usecase1)
   * [ケース ②](#Usecase2)
@@ -45,7 +52,7 @@ ApplicationControllerは、以下のような処理を実行する<br>
 git clone https://github.com/Project-GAUDI/ApplicationController.git
 ```
 
-3. ./src/nuget_template.configの<GITHUB_USERNAME>と<PERSONAL_ACCESS_TOKEN>を自身のユーザー名とPersonal Accese tokenに書き換えて、ファイル名をnuget.configに変更してください
+3. ./src/nuget_template.configの<GITHUB_USERNAME>と<PERSONAL_ACCESS_TOKEN>を自身のユーザー名とPersonal Accese tokenに書き換えて、ファイル名をnuget.configに変更
 
 4. Dockerイメージをビルド
 ```
@@ -69,9 +76,8 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 ## イメージのURL
 準備中
-
-| URL                                                                     | Description          |
-| ----------------------------------------------------------------------- | -------------------- |
+| URL                                                             | Description         |
+| --------------------------------------------------------------- | ------------------- |
 
 ## 動作保証環境
 
@@ -250,22 +256,6 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 任意のJSON形式データ。ただし下記が含まれること。<br>
 * 後処理でステータスの判定がある場合、判定対象のデータ。<br>
 * 次実行プロセスの指定がある場合、次実行プロセスの入力データとして必要な情報。
-
-<a id="gRPC_Application"></a>
-
-## gRPC Application実行(未実装)
-
-<a id="gRPC_Request"></a>
-
-### リクエスト
-
-未定
-
-<a id="gRPC_Response"></a>
-
-### レスポンス
-
-未定
 
 ## 送信メッセージ
 
