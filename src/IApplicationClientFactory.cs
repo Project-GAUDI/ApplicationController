@@ -1,6 +1,6 @@
 using System;
 
-namespace ApplicationController
+namespace IotedgeV2ApplicationController
 {
     public interface IApplicationClientFactory
     {

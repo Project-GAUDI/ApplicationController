@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using TICO.GAUDI.Commons;
 using YamlDotNet.Serialization;
 
-namespace ApplicationController
+namespace IotedgeV2ApplicationController
 {
     public class MyDesiredProperties
     {
@@ -27,8 +27,6 @@ namespace ApplicationController
                     // gRPC
                 }
 
-
-
                 public class ReplaceParam
                 {
                     public string base_name = null;
@@ -37,25 +35,25 @@ namespace ApplicationController
 
                     public void Check()
                     {
-                        if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-                        {
-                            MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-                        }
 
                         if (string.IsNullOrEmpty(base_name))
                         {
-                            throw new Exception("base_name is null or empty.");
+                            var errmsg = $"base_name is null or empty.";
+                            throw new Exception(errmsg);
                         }
 
                         if (MessageData.NotSelected == source_data_type)
                         {
-                            throw new Exception("source_data_type is not set.");
+                            var errmsg = $"source_data_type is not set.";
+                            throw new Exception(errmsg);
                         }
 
                         if (string.IsNullOrEmpty(source_data_key))
                         {
-                            throw new Exception("source_data_key is null or empty.");
+                            var errmsg = $"source_data_key is null or empty.";
+                            throw new Exception(errmsg);
                         }
+
                     }
                 }
 
@@ -65,19 +63,17 @@ namespace ApplicationController
 
                 public void Check()
                 {
-                    if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-                    {
-                        MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-                    }
 
                     if (Protocol.NotSelected == type)
                     {
-                        throw new Exception("application type is not set.");
+                        var errmsg = $"application type is not set.";
+                        throw new Exception(errmsg);
                     }
 
                     if (string.IsNullOrEmpty(url))
                     {
-                        throw new Exception("url is null or empty.");
+                        var errmsg = $"url is null or empty.";
+                        throw new Exception(errmsg);
                     }
 
                     foreach (var param in replace_params)
@@ -85,11 +81,10 @@ namespace ApplicationController
                         param.Check();
                         if (false == url.Contains(param.base_name))
                         {
-                            throw new Exception($"url is not contain base_name.(url={url},base_name={param.base_name})");
+                            var errmsg = $"url is not contain base_name.(url={url},base_name={param.base_name})";
+                            throw new Exception(errmsg);
                         }
                     }
-
-
                 }
             }
 
@@ -105,27 +100,25 @@ namespace ApplicationController
 
                         public void Check()
                         {
-                            if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-                            {
-                                MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-                            }
 
                             if (MessageData.NotSelected == type)
                             {
-                                throw new Exception("set_values type is not set.");
+                                var errmsg = $"set_values type is not set.";
+                                throw new Exception(errmsg);
                             }
 
                             if (string.IsNullOrEmpty(key))
                             {
-                                throw new Exception("set_values key is null or empty.");
+                                var errmsg = $"set_values key is null or empty.";
+                                throw new Exception(errmsg);
                             }
 
                             if (string.IsNullOrEmpty(value))
                             {
-                                throw new Exception("set_values value is null or empty.");
+                                var errmsg = $"set_values value is null or empty.";
+                                throw new Exception(errmsg);
                             }
                         }
-
                     }
                     public string output_name = null;
                     public string next_process = null;
@@ -133,14 +126,11 @@ namespace ApplicationController
 
                     public void Check()
                     {
-                        if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-                        {
-                            MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-                        }
 
                         if (string.IsNullOrEmpty(output_name))
                         {
-                            throw new Exception("output_name is null or empty.");
+                            var errmsg = $"output_name is null or empty.";
+                            throw new Exception(errmsg);
                         }
 
                         foreach (var setValue in set_values)
@@ -148,7 +138,6 @@ namespace ApplicationController
                             setValue.Check();
                         }
                     }
-
                 }
 
                 public string condition_path = null;
@@ -157,18 +146,16 @@ namespace ApplicationController
 
                 public void Check()
                 {
-                    if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-                    {
-                        MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-                    }
 
                     if (string.IsNullOrEmpty(condition_path) && false == string.IsNullOrEmpty(condition_operator))
                     {
-                        throw new Exception("condition_path is null or empty, but condition_operator is not null or empty.");
+                        var errmsg = $"condition_path is null or empty, but condition_operator is not null or empty.";
+                        throw new Exception(errmsg);
                     }
                     else if (false == string.IsNullOrEmpty(condition_path) && string.IsNullOrEmpty(condition_operator))
                     {
-                        throw new Exception("condition_path is not null or empty, but condition_operator is null or empty.");
+                        var errmsg = $"condition_path is not null or empty, but condition_operator is null or empty.";
+                        throw new Exception(errmsg);
                     }
 
                     if (false == string.IsNullOrEmpty(condition_path))
@@ -176,20 +163,21 @@ namespace ApplicationController
                         if (false == condition_operator.StartsWith("EQ(") ||
                             false == condition_operator.EndsWith(")"))
                         {
-                            throw new Exception($"\"{condition_operator}\" not supported operator.");
+                            var errmsg = $"\"{condition_operator}\" not supported operator.";
+                            throw new Exception(errmsg);
                         }
                     }
 
                     if (0 == tasks.Count)
                     {
-                        throw new Exception("tasks is empty.");
+                        var errmsg = $"tasks is empty.";
+                        throw new Exception(errmsg);
                     }
 
                     foreach (var task in tasks)
                     {
                         task.Check();
                     }
-
                 }
             }
 
@@ -199,19 +187,17 @@ namespace ApplicationController
 
             public void Check()
             {
-                if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-                {
-                    MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-                }
 
                 if (string.IsNullOrEmpty(process_name))
                 {
-                    throw new Exception("process_name is null or empty.");
+                    var errmsg = $"process_name is null or empty.";
+                    throw new Exception(errmsg);
                 }
 
                 if (null == application)
                 {
-                    throw new Exception("application is null.");
+                    var errmsg = $"application is null.";
+                    throw new Exception(errmsg);
                 }
 
                 foreach (var post_process in post_processes)
@@ -220,15 +206,13 @@ namespace ApplicationController
                 }
 
                 application.Check();
+
             }
 
         }
 
         public string input_name = null;
         public List<Process> processes = new List<Process>();
-
-        static Logger MyLogger { get; } = Logger.GetLogger(typeof(MyDesiredProperties));
-
         public static MyDesiredProperties Deserialize(string desiredProperties)
         {
             MyDesiredProperties retDeserialized = null;
@@ -240,7 +224,8 @@ namespace ApplicationController
             }
             catch
             {
-                throw new Exception("Unexpected data type");
+                var errmsg = $"Unexpected data type.";
+                throw new Exception(errmsg);
             }
 
             return retDeserialized;
@@ -256,7 +241,8 @@ namespace ApplicationController
             }
             catch
             {
-                throw new Exception("Failed to serialization.");
+                var errmsg = $"Failed to serialization.";
+                throw new Exception(errmsg);
             }
 
             return retList;
@@ -264,20 +250,16 @@ namespace ApplicationController
 
         public void Check()
         {
-
-            if ((int)Logger.OutputLogLevel <= (int)Logger.LogLevel.TRACE)
-            {
-                MyLogger.WriteLog(Logger.LogLevel.TRACE, $"Start Method: {System.Reflection.MethodBase.GetCurrentMethod().Name}");
-            }
-
             if (string.IsNullOrEmpty(input_name))
             {
-                throw new Exception("input_name is null or empty.");
+                var errmsg = $"input_name is null or empty.";
+                throw new Exception(errmsg);
             }
 
             if (0 == processes.Count)
             {
-                throw new Exception("processes is empty.");
+                var errmsg = $"processes is empty.";
+                throw new Exception(errmsg);
             }
 
             foreach (var process in processes)

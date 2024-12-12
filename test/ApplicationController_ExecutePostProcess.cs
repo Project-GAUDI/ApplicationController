@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using TICO.GAUDI.Commons;
 
-
-namespace ApplicationController.Test
+namespace IotedgeV2ApplicationController.Test
 {
 
     public class ApplicationController_ExecutePostProcess : ApplicationController_TesterBase
@@ -30,20 +29,20 @@ namespace ApplicationController.Test
         [Fact(DisplayName = "正常系:SendEventAsyncが成功する→正常終了")]
         public async void SendEventAsyncIsSucceeded_Succeeded()
         {
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal(body, client._message.GetBodyString());
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
 
         [Fact(DisplayName = "異常系:SendEventAsyncがエラー→例外")]
         public async void SendEventAsyncIsFailed_ExceptionThrown()
         {
             myDesiredProperties.processes[0].post_processes[0].tasks[0].output_name = "";
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
             var ex = await Assert.ThrowsAsync<Exception>(async () =>
@@ -59,13 +58,13 @@ namespace ApplicationController.Test
             myDesiredProperties.processes[0].post_processes[0].condition_path = "$.NotFound";
             myDesiredProperties.processes[0].post_processes[0].condition_operator = "EQ(\"200\")";
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Null(client._message);
+            Assert.Null(sender._message);
         }
 
         [Fact(DisplayName = "正常系:condition_pathとcondition_operatorの両方が未指定→判定なしでtaskが実行される")]
@@ -75,14 +74,15 @@ namespace ApplicationController.Test
             //            myDesiredProperties.processes[0].post_processes[0].condition_operator = "EQ(\"200\")";
 
             factory.SetReturnStatus("200");
+            SetRequiredStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal(body, client._message.GetBodyString());
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
 
         [Fact(DisplayName = "正常系:condition_pathは指定済み、condition_operatorが未指定→taskが実行されない")]
@@ -93,13 +93,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Null(client._message);
+            Assert.Null(sender._message);
         }
 
         [Fact(DisplayName = "正常系:condition_pathは未指定、condition_operatorが指定済み→判定なしでtaskが実行される")]
@@ -109,14 +109,15 @@ namespace ApplicationController.Test
             myDesiredProperties.processes[0].post_processes[0].condition_operator = "EQ(\"200\")";
 
             factory.SetReturnStatus("200");
+            SetRequiredStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal(body, client._message.GetBodyString());
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
 
         [Fact(DisplayName = "正常系:condition_pathの場所にデータが存在し、CheckOperatorの戻り値がfalse→taskが実行されない")]
@@ -127,13 +128,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("201");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Null(client._message);
+            Assert.Null(sender._message);
         }
 
         [Fact(DisplayName = "正常系:condition_pathの場所にデータが存在し、CheckOperatorの戻り値がtrue→taskが実行される")]
@@ -143,14 +144,15 @@ namespace ApplicationController.Test
             myDesiredProperties.processes[0].post_processes[0].condition_operator = "EQ(\"200\")";
 
             factory.SetReturnStatus("200");
+            SetRequiredStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal(body, client._message.GetBodyString());
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
 
         [Fact(DisplayName = "正常系:condition_pathの場所にデータが存在し、condition_operatorの引数が0文字→taskが実行される")]
@@ -161,13 +163,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal(body, client._message.GetBodyString());
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
 
         [Fact(DisplayName = "正常系:condition_pathの場所にデータが存在し、condition_operatorの引数が空文字→taskが実行される")]
@@ -178,13 +180,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal(body, client._message.GetBodyString());
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
 
 
@@ -201,13 +203,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            TestBodyPath(client._message.GetBodyString(), "$.A", "AAA");
+            TestBodyPath(sender._message.GetBodyString(), "$.A", "AAA");
         }
 
         [Fact(DisplayName = "正常系:set_valuesのtypeがBodyで、keyがnullではなく、その場所にデータが存在しない→メッセージ追加")]
@@ -223,13 +225,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            TestBodyPath(client._message.GetBodyString(), "$.B", "AAA");
+            TestBodyPath(sender._message.GetBodyString(), "$.B", "AAA");
         }
 
         [Fact(DisplayName = "正常系:set_valuesのtypeがPropertiesで、keyがnullではなく、その場所にデータが存在する→メッセージ上書き")]
@@ -246,12 +248,12 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal("valueA", client._message.GetProperty("prop1"));
+            Assert.Equal("valueA", sender._message.GetProperty("prop1"));
         }
 
         [Fact(DisplayName = "正常系:set_valuesのtypeがPropertiesで、keyがnullではなく、その場所にデータが存在しない→メッセージ追加")]
@@ -268,14 +270,14 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
 
             await result.Execute(process_name);
 
-            Assert.Equal("valueA", client._message.GetProperty("prop2"));
+            Assert.Equal("valueA", sender._message.GetProperty("prop2"));
 
-            Assert.Equal("value1", client._message.GetProperty("prop1"));
+            Assert.Equal("value1", sender._message.GetProperty("prop1"));
         }
 
         [Fact(DisplayName = "正常系:set_valuesの要素数が3つで、condition達成→全てのtaskが実行され、出力にvalueが含まれる")]
@@ -307,13 +309,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            TestBodyPath(client._message.GetBodyString(), "$.A", "AAA");
-            TestBodyPath(client._message.GetBodyString(), "$.B", "BBB");
-            Assert.Equal("valueA", client._message.GetProperty("prop2"));
+            TestBodyPath(sender._message.GetBodyString(), "$.A", "AAA");
+            TestBodyPath(sender._message.GetBodyString(), "$.B", "BBB");
+            Assert.Equal("valueA", sender._message.GetProperty("prop2"));
         }
 
         [Fact(DisplayName = "正常系:set_valuesの要素数が3つで、condition未達成→全てのtaskが実行されず、出力にvalueが含まれない")]
@@ -345,11 +347,11 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("10");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            Assert.Null(client._message);
+            Assert.Null(sender._message);
         }
 
         [Fact(DisplayName = "正常系:tasksの要素数が3つで、condition達成→全てのtaskが実行される")]
@@ -396,13 +398,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            TestBodyPath(client._allMessage["output1"].GetBodyString(), "$.A", "AAA");
-            TestBodyPath(client._allMessage["output2"].GetBodyString(), "$.B", "BBB");
-            Assert.Equal("valueA", client._allMessage["output3"].GetProperty("prop2"));
+            TestBodyPath(sender._allMessage["output1"].GetBodyString(), "$.A", "AAA");
+            TestBodyPath(sender._allMessage["output2"].GetBodyString(), "$.B", "BBB");
+            Assert.Equal("valueA", sender._allMessage["output3"].GetProperty("prop2"));
         }
 
         [Fact(DisplayName = "正常系:tasksの要素数が3つで、condition未達成→全てのtaskが実行されない")]
@@ -449,11 +451,11 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("10");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            Assert.Null(client._message);
+            Assert.Null(sender._message);
         }
 
         [Fact(DisplayName = "正常系:post_processesの要素数が3つで、全てcondition達成→全てのpost_processのtaskが実行される")]
@@ -485,13 +487,13 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            TestBodyPath(client._allMessage["output1"].GetBodyString(), "$.A", "AAA");
-            TestBodyPath(client._allMessage["output2"].GetBodyString(), "$.B", "BBB");
-            Assert.Equal("valueA", client._allMessage["output3"].GetProperty("prop2"));
+            TestBodyPath(sender._allMessage["output1"].GetBodyString(), "$.A", "AAA");
+            TestBodyPath(sender._allMessage["output2"].GetBodyString(), "$.B", "BBB");
+            Assert.Equal("valueA", sender._allMessage["output3"].GetProperty("prop2"));
         }
 
         [Fact(DisplayName = "正常系:post_processesの要素数が3つで、1つめのみcondition達成→post_process[0]のtaskのみ全て実行される")]
@@ -523,12 +525,12 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            TestBodyPath(client._allMessage["output1"].GetBodyString(), "$.A", "AAA");
-            Assert.Single(client._allMessage);
+            TestBodyPath(sender._allMessage["output1"].GetBodyString(), "$.A", "AAA");
+            Assert.Single(sender._allMessage);
         }
 
         [Fact(DisplayName = "正常系:post_processesの要素数が3つで、2つめのみcondition達成→post_process[1]のtaskのみ全て実行される")]
@@ -560,12 +562,12 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("10");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            TestBodyPath(client._allMessage["output2"].GetBodyString(), "$.B", "BBB");
-            Assert.Single(client._allMessage);
+            TestBodyPath(sender._allMessage["output2"].GetBodyString(), "$.B", "BBB");
+            Assert.Single(sender._allMessage);
         }
 
         [Fact(DisplayName = "正常系:post_processesの要素数が3つで、3つめのみcondition達成→post_process[2]のtaskのみ全て実行される")]
@@ -597,12 +599,12 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("10");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            Assert.Equal("valueA", client._allMessage["output3"].GetProperty("prop2"));
-            Assert.Single(client._allMessage);
+            Assert.Equal("valueA", sender._allMessage["output3"].GetProperty("prop2"));
+            Assert.Single(sender._allMessage);
         }
 
         [Fact(DisplayName = "正常系:post_processesの要素数が3つで、3つとも未達成→全てのpost_processのtaskが実行されない")]
@@ -634,12 +636,12 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("10");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            Assert.Null(client._message);
-            Assert.Empty(client._allMessage);
+            Assert.Null(sender._message);
+            Assert.Empty(sender._allMessage);
         }
 
         [Fact(DisplayName = "正常系:post_processesの要素数が3つで、conditionが1つめ未指定、2つめ未達成、3つめ達成の場合→post_process[0]、post_process[2]のtaskのみ全て実行される")]
@@ -671,14 +673,14 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
             string process_name = "test";
             await result.Execute(process_name);
 
-            TestBodyPath(client._allMessage["output1"].GetBodyString(), "$.A", "AAA");
-            // TestBodyPath(client._allMessage["output2"].GetBodyString(), "$.B", "BBB");
-            Assert.Equal("valueA", client._allMessage["output3"].GetProperty("prop2"));
-            Assert.Equal(2, client._allMessage.Count);
+            TestBodyPath(sender._allMessage["output1"].GetBodyString(), "$.A", "AAA");
+            // TestBodyPath(sender._allMessage["output2"].GetBodyString(), "$.B", "BBB");
+            Assert.Equal("valueA", sender._allMessage["output3"].GetProperty("prop2"));
+            Assert.Equal(2, sender._allMessage.Count);
         }
 
         [Fact(DisplayName = "異常系:set_valuesのtypeがBodyで、keyが\"$\"→例外")]
@@ -694,7 +696,7 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -717,7 +719,7 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -740,7 +742,7 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("200");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -764,8 +766,9 @@ namespace ApplicationController.Test
             factory.SetReturnStatus("200");
 
             body = "{\"A\":{\"key\":\"AAA\"}, \"B\":{\"B2\":{\"key\":\"BBB\"}}}";
+            factory.SetResponse("{\"status\":200,\"A\":{\"key\":\"AAA\"}, \"B\":{\"B2\":{\"key\":\"BBB\"}}}");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -790,10 +793,14 @@ namespace ApplicationController.Test
             setValue.value = "AAA";
 
             factory.SetReturnStatus("200");
+            factory.SetResponse("{\"status\":\"200\",\"Array\":[\"CCC\",\"BBB\"]}");
+            // factory.SetResponse("{\"status\":[\"AAA\",\"BBB\"]}");
+            // factory.SetResponse("{status:\"BBB\"}");
 
-            body = "{\"Array\":[\"AAA\",\"BBB\"]}";
+            // factory.SetReturnStatus("[\"AAA\",\"BBB\"]");
+            // SetRequiredStatus("[\"AAA\",\"BBB\"]");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
@@ -821,11 +828,11 @@ namespace ApplicationController.Test
 
             properties["process_name"] = "test";
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             await result.Execute(properties["process_name"]);
 
-            Assert.Null(client._message.GetProperty("process_name"));
+            Assert.Null(sender._message.GetProperty("process_name"));
             Assert.Equal("test", properties["process_name"]);
         }
 
@@ -846,11 +853,11 @@ namespace ApplicationController.Test
 
             properties["process_name"] = "test";
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             await result.Execute(properties["process_name"]);
 
-            Assert.Equal(myDesiredProperties.processes[0].post_processes[0].tasks[0].next_process, client._message.GetProperty("process_name"));
+            Assert.Equal(myDesiredProperties.processes[0].post_processes[0].tasks[0].next_process, sender._message.GetProperty("process_name"));
             Assert.Equal("test", properties["process_name"]);
         }
 
@@ -862,13 +869,25 @@ namespace ApplicationController.Test
 
             factory.SetReturnStatus("100");
 
-            ApplicationController result = new ApplicationController(factory, env, myDesiredProperties.processes, client, body, properties);
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
 
             string process_name = "test";
 
             await result.Execute(process_name);
-            Assert.Null(client._message);
+            Assert.Null(sender._message);
 
+        }
+
+        [Fact(DisplayName = "正常系:SendEventAsyncが成功する→WebAPIのレスポンスがBodyに含まれる")]
+        public async void SendEventAsyncIsSucceeded_BodyContainsWebAPIresponse()
+        {
+            ApplicationController result = new ApplicationController(factory,sender, env, myDesiredProperties.processes, body, properties);
+
+            string process_name = "test";
+
+            await result.Execute(process_name);
+
+            Assert.Equal(RequiredBody, sender._message.GetBodyString());
         }
     }
 }
