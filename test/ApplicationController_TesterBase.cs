@@ -1,21 +1,16 @@
-using System;
-using Xunit;
-using Xunit.Abstractions;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using TICO.GAUDI.Commons.Test;
+using IotedgeV2ApplicationController;
 
-namespace IotedgeV2ApplicationController.Test;
+namespace ApplicationController.Test;
 
-public class ApplicationController_TesterBase
+public class ApplicationController_TesterBase(ITestOutputHelper output)
 {
-    protected readonly ITestOutputHelper _output;
+    protected readonly ITestOutputHelper _output = output;
     private string _status = "";
-
-    protected TestApplicationClientFactory factory = new TestApplicationClientFactory();
-    protected StubMessageSender sender = new StubMessageSender();
+    protected TestApplicationClientFactory factory = new();
+    protected StubMessageSender sender = new();
     protected EnvironmentInfo env = EnvironmentInfo.CreateInstance();
-    protected StubModuleClient client = new StubModuleClient();
+    protected StubModuleClient client = new();
     protected string body = "{\"A\":\"ABC\"}";
     protected string RequiredBody
     {
@@ -29,15 +24,8 @@ public class ApplicationController_TesterBase
     protected IDictionary<string, string> properties = new Dictionary<string, string>();
     protected MyDesiredProperties myDesiredProperties = MyDesiredPropertiesCreater.Create();
 
-    public ApplicationController_TesterBase(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     public void SetRequiredStatus(string status)
     {
         _status = status;
     }
-
-
 }

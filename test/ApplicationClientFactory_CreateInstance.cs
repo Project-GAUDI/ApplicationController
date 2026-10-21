@@ -1,28 +1,26 @@
-namespace IotedgeV2ApplicationController.Test;
+using IotedgeV2ApplicationController;
 
-public class ApplicationClientFactory_CreateInstance
+namespace ApplicationController.Test;
+
+public class ApplicationClientFactory_CreateInstance()
 {
-    private readonly ITestOutputHelper _output;
-
-    public ApplicationClientFactory_CreateInstance(ITestOutputHelper output)
+    [Fact(DisplayName = "Case095_DP:application.typeにNotSelectedを設定")]
+    public void Case095()
     {
-        _output = output;
+        var fact = new ApplicationClientFactory();
+
+        var exception = Assert.Throws<Exception>(() => fact.CreateInstance(MyDesiredProperties.Process.AppSetting.Protocol.NotSelected));
+
+        Assert.Contains("Protocol NotSelected not supported.", exception.Message);
     }
 
-    [Fact(DisplayName = "正常系:protocolが\"http\"→TestHttpApplicationClientインスタンス生成")]
-    public void ProtocolIsHttp_InstanceCreated()
+    [Fact(DisplayName = "Case096_DP:application.typeにhttpを設定")]
+    public void Case096()
     {
-        IApplicationClientFactory fact = new ApplicationClientFactory();
+        var fact = new ApplicationClientFactory();
+
         IApplicationClient result = fact.CreateInstance(MyDesiredProperties.Process.AppSetting.Protocol.http);
+        
         Assert.IsAssignableFrom<HttpApplicationClient>(result);
-    }
-
-    [Fact(DisplayName = "正常系:CreateInstanceの引数にNotSelectedがセット→例外")]
-    public void ProtocolIsNotSelected_ExceptionThrown()
-    {
-        IApplicationClientFactory fact = new ApplicationClientFactory();
-        Assert.Throws<Exception>(()=> {
-            IApplicationClient result = fact.CreateInstance(MyDesiredProperties.Process.AppSetting.Protocol.NotSelected);
-        });
     }
 }

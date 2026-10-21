@@ -73,7 +73,7 @@ namespace IotedgeV2ApplicationController
             {
                 var errmsg = $"process_name is null or empty.";
                 MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Execute caused by {errmsg}");
-                throw new Exception(errmsg);
+                throw new DiscardMessageException(errmsg);
             }
 
             MyDesiredProperties.Process targetProcess = null;
@@ -86,7 +86,7 @@ namespace IotedgeV2ApplicationController
             {
                 var errmsg = $"process_name not found.({process_name}).";
                 MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Execute caused by {errmsg}");
-                throw new Exception(errmsg);
+                throw new DiscardMessageException(errmsg);
             }
 
             string executeProcessResult = await ExecuteProcess(targetProcess);
@@ -109,7 +109,7 @@ namespace IotedgeV2ApplicationController
                     retResult = true;
                 }
             }
-            catch (Newtonsoft.Json.JsonReaderException)
+            catch (JsonReaderException)
             {
                 retResult = false;
             }
@@ -174,7 +174,7 @@ namespace IotedgeV2ApplicationController
             {
                 var errmsg = $"Response is not JSON format. (response={retString}).";
                 MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: ExecuteProcess caused by {errmsg}");
-                throw new Exception(errmsg);
+                throw new DiscardMessageException("Response is not JSON.");
             }
 
             if (MyLogger.IsLogLevelToOutput(ILogger.LogLevel.TRACE))
@@ -312,7 +312,7 @@ namespace IotedgeV2ApplicationController
             {
                 var errmsg = $"Matched multiple tokens.";
                 MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: GetJsonPathObject caused by {errmsg}");
-                throw new Exception(errmsg);
+                throw new DiscardMessageException("Multiple values matched by JSONPath in URL replace.");
             }
             else if (1 == targetTokensCount)
             {
@@ -348,11 +348,15 @@ namespace IotedgeV2ApplicationController
             {
                 jt = GetJsonPathObject(ioRoot, patharray);
             }
-            catch (Newtonsoft.Json.JsonException ex)
+            catch (JsonException ex)
             {
                 var errmsg = $"Illegal JSONPath. (key={key}, body={JsonConvert.SerializeObject(ioRoot)}.";
                 MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: ModifyBody caused by {errmsg}");
-                throw new Exception($"{errmsg} execption={ex})");
+                throw new DiscardMessageException($"{errmsg} execption={ex})");
+            }
+            catch (DiscardMessageException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
