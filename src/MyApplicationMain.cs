@@ -1,12 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using TICO.GAUDI.Commons;
 
 namespace IotedgeV2ApplicationController
 {
+    internal class DiscardMessageException : Exception
+    {
+        public DiscardMessageException(string message) : base(message) { }
+    }
+
     /// <summary>
     /// Application Main class
     /// </summary>
@@ -18,12 +24,40 @@ namespace IotedgeV2ApplicationController
         private static EnvironmentInfo MyEnvInfo { get; set; } = null;
         private static MyDesiredProperties myDesiredProperties { get; set; } = null;
         const string PROPKEY_PROCESSNAME = "process_name";
+        private int _disposed = 0; // 0: false, 1: true
 
-        public void Dispose()
+        /// <summary>
+        /// リソース解放
+        /// </summary>
+        /// <returns></returns>
+        public async ValueTask DisposeAsync()
         {
-            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: Dispose");
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Start Method: DisposeAsync");
 
-            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: Dispose");
+            // 2重実行防止
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"Exit Method: Already disposed, skipping DisposeAsync");
+                return;
+            }
+
+            try
+            {
+                // ここでApplicationMainのリソース解放処理を行う
+                // 非同期リソースがある場合は適切に解放する
+                // ＝＝＝＝＝＝＝＝＝＝＝＝＝ここから＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+                await Task.CompletedTask; // 非同期リソース解放処理をここに記述
+
+                // ＝＝＝＝＝＝＝＝＝＝＝＝＝ここまで＝＝＝＝＝＝＝＝＝＝＝＝＝
+            }
+            catch (Exception ex)
+            {
+                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"Error in DisposeAsync: {ex.Message}", true);
+                // 例外は再スローしない（Disposeでは通常例外を抑制）
+            }
+
+            MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: DisposeAsync");
         }
 
         /// <summary>
@@ -47,7 +81,7 @@ namespace IotedgeV2ApplicationController
             }
             catch (Exception ex)
             {
-                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"Custum Environment Load Error.  {ex}", true);
+                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"Custom Environment Load Error.  {ex}", true);
                 retStatus = false;
             }
 
@@ -62,7 +96,6 @@ namespace IotedgeV2ApplicationController
         /// アプリケーション起動処理					
         /// システム初期化完了後に呼び出される
         /// </summary>
-        /// <param name=""></param>
         /// <returns></returns>
         public async Task<bool> StartAsync()
         {
@@ -122,18 +155,7 @@ namespace IotedgeV2ApplicationController
             bool retStatus = true;
             try
             {
-                string jsonDesiredProperties = desiredProperties.ToString();
-                MyLogger.WriteLog(ILogger.LogLevel.DEBUG, $"DesiredProperties is {jsonDesiredProperties}.");
-
-                myDesiredProperties = MyDesiredProperties.Deserialize(jsonDesiredProperties);
-                myDesiredProperties.Check();
-
-                List<string> dumps = myDesiredProperties.Dump();
-                MyLogger.WriteLog(ILogger.LogLevel.INFO, $"DesiredProperty dump.");
-                foreach (string dump in dumps)
-                {
-                    MyLogger.WriteLog(ILogger.LogLevel.INFO, $"  {dump}");
-                }
+                myDesiredProperties = MyDesiredProperties.GetDesiredProperties(desiredProperties);
             }
             catch (Exception ex)
             {
@@ -170,6 +192,16 @@ namespace IotedgeV2ApplicationController
             try
             {
                 string body = message.GetBodyString();
+                // BodyがJSONでなければ破棄
+                try
+                {
+                    JToken.Parse(body);
+                }
+                catch (Exception)
+                {
+                    throw new DiscardMessageException("Message Body is not JSON.");
+                }
+
                 IDictionary<string, string> properties = message.GetProperties();
                 string propertiesString = string.Join(",", properties.Select(kvp => kvp.ToString()));
 
@@ -183,7 +215,7 @@ namespace IotedgeV2ApplicationController
 
                 if (false == properties.ContainsKey(PROPKEY_PROCESSNAME))
                 {
-                    throw new Exception("process_name is not in Properties.");
+                    throw new DiscardMessageException("process_name is not in Properties.");
                 }
 
                 string processName = properties[PROPKEY_PROCESSNAME];
@@ -191,6 +223,11 @@ namespace IotedgeV2ApplicationController
                 // アプリ呼び出し処理起動
                 ApplicationController obj = new ApplicationController(MyClientFactory,MySender,MyEnvInfo, myDesiredProperties.processes, body, properties);
                 await obj.Execute(processName);
+            }
+            catch (DiscardMessageException ex)
+            {
+                MyLogger.WriteLog(ILogger.LogLevel.ERROR, $"OnMessageReceivedAsync failed. {ex}", true);
+                retStatus = true;
             }
             catch (Exception ex)
             {

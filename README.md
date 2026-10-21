@@ -32,14 +32,17 @@
 * [LICENSE](#LICENSE)
 
 ## 概要
+
 ApplicationControllerは、メッセージ受信をトリガに、事前に設定されたプロセスを実行し、結果を出力するAzure IoT edgeモジュールです。
 
 ## 機能
-ApplicationControllerは、以下のような処理を実行する<br>
-① 受信メッセージのプロパティで指定されたプロセスを実行する<br>
-② 内部でアプリケーションを呼び出す<br>
-③ 外部アプリケーションのレスポンスを受け取る<br>
-④ 後処理としてメッセージを送信する。その際に次に実行するプロセス名を指定して別のプロセスを再実行することも可能
+
+ApplicationControllerは、受信メッセージに基づきプロセス実行・外部アプリケーション連携・レスポンス処理を行う。  
+処理の流れは下記の通り。  
+① 受信メッセージのプロパティで指定されたプロセスを実行する。  
+② プロセスから外部アプリケーションを呼び出す。  
+③ 外部アプリケーションのレスポンスを受け取る。  
+④ レスポンスを判定し、メッセージを送信する。その際に次に実行するプロセス名を指定して別のプロセスを再実行することも可能。  
 
 ![schematic diagram](./docs/img/schematic_diagram.drawio.png)
 
@@ -81,9 +84,9 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 ## 動作保証環境
 
-| Module Version | IoTEdge | edgeAgent | edgeHub  | amd64 verified on | arm64v8 verified on | arm32v7 verified on |
-| -------------- | ------- | --------- | -------- | ----------------- | ------------------- | ------------------- |
-| 6.0.2          | 1.5.0<br>1.5.16 | 1.5.6<br>1.5.19 | 1.5.6<br>1.5.19 | ubuntu22.04       | －                  | －                  |
+| Module Version | IoTEdge | edgeAgent | edgeHub | amd64 verified on | arm64v8 verified on | arm32v7 verified on |
+| -------------- | ------- | --------- | ------- | ----------------- | ------------------- | ------------------- |
+| 7.0.1          | 1.6.4   | 1.6.4     | 1.6.4   | ubuntu24.04       | －                  | －                  |
 
 ## Deployment 設定値
 
@@ -91,45 +94,41 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 #### 環境変数の値
 
-| Key                       | Required | Default | Recommend | Description                                                     |
-| ------------------------- | -------- | ------- | --------- | ---------------------------------------------------------------- |
-| TransportProtocol         |          | Amqp    |           | ModuleClient の接続プロトコル。<br>["Amqp", "Mqtt"] |
-| LogLevel                  |          | info    |           | 出力ログレベル。<br>["trace", "debug", "info", "warn", "error"] |
-| HttpTimeout               |          | 10      |           | http 通信時のタイムアウト時間。                                                         |
+| Key               | Type   | Required | Conditions                                  | Default | Description                           |
+| ----------------- | ------ | -------- | ------------------------------------------- | ------- | ------------------------------------- |
+| TransportProtocol | string |          | ["Amqp", "Mqtt"]                            | Amqp    | ModuleClient の接続プロトコル。       |
+| LogLevel          | string |          | ["trace", "debug", "info", "warn", "error"] | info    | 出力ログレベル。                      |
+| HttpTimeout       | number |          | 1以上の整数                                 | 10      | http 通信時のタイムアウト時間（秒）。 |
 
 ### Desired Properties
 
 #### Desired Properties の値
 
-| JSON Key                                               | Type   | Required | Default | Recommend | Description                                                                |
-| ------------------------------------------------------ | ------ | -------- | ------- | --------- | ------------------------------------------------------------------------   |
-| input_name                                             | string | ○        |         |           | メッセージの入力トピック名                                                                           |
-| processes                                              | array  | ○        |         |           | プロセス設定配列                                                                                     |           |
-| &nbsp; {}                                              | object |          |         |           | プロセス設定                                                                                         |
-| &nbsp;&nbsp; process_name                              | string | ○        |         |           | 実行プロセス名<br>入力メッセージの"process_name"プロパティにマッチした名前があるとそのプロセスを実行 |
-| &nbsp;&nbsp; application                               | object | ○        |         |           | 実行アプリケーション                                                                                 |
-| &nbsp;&nbsp;&nbsp; type                                | string | ○        |         |           | プロトコルタイプ<br>["http", "gRPC"(未実装)]                                                         |
-| &nbsp;&nbsp;&nbsp; url                                 | string | ○        |         |           | 呼び出す WebAPP の URL (type="http" 指定時必須)<br>replace_params で部分置換可能                     |
-| &nbsp;&nbsp;&nbsp; replace_params                      | array  |          |         |           | URL の文字置換パラメータ配列 (type="http" 指定時有効)                                                |
-| &nbsp;&nbsp;&nbsp;&nbsp; {}                            | object |          |         |           | URL の文字置換パラメータ                                                                             |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; base_name               | string | ○        |         |           | 置換元文字列 (replace_params 指定時必須)<br>url に含まれる必要あり                                   |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; source_data_type        | string | ○        |         |           | 受信メッセージから取り出す置換文字列取得元 (replace_params 指定時必須)<br>["Body", "Properties"]     |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; source_data_key         | string | ○        |         |           | 取得元データパス (replace_params 指定時必須)<br>[取得元データパス (JSONPath※1), プロパティ名]        |
-| &nbsp;&nbsp; post_processes                            | array  |          |         |           | 後処理設定配列                                                                                       |
-| &nbsp;&nbsp;&nbsp; {}                                  | object |          |         |           | 後処理設定<br>condition があれば満たせば tasks を実行, なければ無条件で実行                          |
-| &nbsp;&nbsp;&nbsp;&nbsp; condition_path                | string | ○        |         |           | 実行条件元データパス (JSONPath※1)                                                                    |
-| &nbsp;&nbsp;&nbsp;&nbsp; condition_operator            | string | ○        |         |           | 実行条件構文※2                                                                                       |
-| &nbsp;&nbsp;&nbsp;&nbsp; tasks                         | array  | ○        |         |           | タスク設定配列                                                                                       |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {}                      | object |          |         |           | タスク設定                                                                                           |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; output_name       | string | ○        |         |           | メッセージの出力トピック名                                                                           |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; next_process      | string |          |         |           | 次実行プロセス名<br>連続して実行させたい場合、これを指定して自モジュールにメッセージ送信すればよい   |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; set_values        | array  |          |         |           | 出力に設定するデータ配列                                                                             |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {}          | object |          |         |           | 出力に設定するデータ                                                                                 |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; type  | string | ○        |         |           | 出力先 (set_values 指定時必須)<br>["Body", "Properties"]                                             |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; key   | string | ○        |         |           | 出力先データパス (set_values 指定時必須)<br>[出力設定パス (JSONPath※1), プロパティ名]                |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value | string | ○        |         |           | 出力設定データ (set_values 指定時必須)                                                               |
+| JSON Key                            | Type         | Required | Conditions                                           | Default | Description                                                                                                                                                                                                                                                                          |
+| ----------------------------------- | ------------ | -------- | ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| input_name                          | string       | ○        |                                                      |         | メッセージの入力トピック名。                                                                                                                                                                                                                                                         |
+| processes                           | object array | ○        |                                                      |         | プロセス設定配列。                                                                                                                                                                                                                                                                   |
+| &emsp; process_name                 | string       | ○        |                                                      |         | 実行プロセス名。<br>受信メッセージの"process_name"プロパティにマッチした名前のプロセスを実行。                                                                                                                                                                                       |
+| &emsp; application                  | object       | ○        |                                                      |         | 実行アプリケーション設定。                                                                                                                                                                                                                                                           |
+| &emsp;&emsp; type                   | string       |          | ["http"]                                             | http    | プロトコルタイプ。                                                                                                                                                                                                                                                                   |
+| &emsp;&emsp; url                    | string       | ○        |                                                      |         | 呼び出す外部アプリケーションのURL。<br>replace_paramsで部分置換可能。                                                                                                                                                                                                                |
+| &emsp;&emsp; replace_params         | object array |          |                                                      |         | URLの文字置換パラメータ配列。                                                                                                                                                                                                                                                        |
+| &emsp;&emsp;&emsp; base_name        | string       | △        | replace_params 指定時必須<br>urlに含まれる必要がある |         | 置換元文字列。                                                                                                                                                                                                                                                                       |
+| &emsp;&emsp;&emsp; source_data_type | string       | △        | replace_params 指定時必須<br>["Body", "Properties"]  |         | 受信メッセージから取り出す置換文字列取得元。                                                                                                                                                                                                                                         |
+| &emsp;&emsp;&emsp; source_data_key  | string       | △        | replace_params 指定時必須                            |         | 取得元データパス。source_data_typeが"Body"の場合はJSONPath※1、"Properties"の場合はプロパティ名を指定。                                                                                                                                                                               |
+| &emsp; post_processes               | object array |          |                                                      |         | 後処理設定配列。<br>condition_pathとcondition_operatorが指定されている場合、指定された条件を満たせばtasksを実行する。<br>condition_pathとcondition_operatorが指定されていない場合、無条件でtasksを実行する。                                                                         |
+| &emsp;&emsp; condition_path         | string       | △        | condition_operator 指定時必須                        |         | 実行条件元データパス。 (JSONPath※1)                                                                                                                                                                                                                                                  |
+| &emsp;&emsp; condition_operator     | string       | △        | condition_path 指定時必須                            |         | 実行条件構文。※2                                                                                                                                                                                                                                                                     |
+| &emsp;&emsp; tasks                  | object array | △        | post_processes 指定時必須                            |         | タスク設定配列。                                                                                                                                                                                                                                                                     |
+| &emsp;&emsp;&emsp; output_name      | string       | △        | tasks 指定時必須                                     |         | メッセージの出力トピック名。                                                                                                                                                                                                                                                         |
+| &emsp;&emsp;&emsp; next_process     | string       |          |                                                      |         | 次実行プロセス名。<br>次実行プロセスをMessage Propertiesのprocess_nameに指定し、メッセージ送信する。<br>送信を本モジュールにルーティングする事で、次プロセスが実行可能となる。                                                                                                       |
+| &emsp;&emsp;&emsp; set_values       | object array |          |                                                      |         | 出力に設定するデータ配列。                                                                                                                                                                                                                                                           |
+| &emsp;&emsp;&emsp;&emsp; type       | string       | △        | set_values 指定時必須<br>["Body", "Properties"]      |         | 出力先。                                                                                                                                                                                                                                                                             |
+| &emsp;&emsp;&emsp;&emsp; key        | string       | △        | set_values 指定時必須                                |         | 出力先。typeが"Body"の場合はJSONPath※1、"Properties"の場合はプロパティ名を指定。<br>※参照データが存在しない場合や、JSONPath抽出で0件（該当データなし）の場合は、エラーや異常ではなく正常系の分岐として扱われる。<br>空データや空文字で処理を継続し、エラーや警告ログは出力されない。 |
+| &emsp;&emsp;&emsp;&emsp; value      | string       | △        | set_values 指定時必須                                |         | 出力設定データ。                                                                                                                                                                                                                                                                     |
 
 ※1 JSONPath
+
 * 記法
   [https://github.com/json-path/JsonPath#operators (外部リンク)](https://github.com/json-path/JsonPath#operators)
 * 制限
@@ -139,16 +138,11 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 以下のものが使用可能
 
-| 構文         | 説明                                                                                                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BETWEEN(A,B) | A 以上 B 以下のデータを取得する。<span style="color:skyblue;">(未実装)</span>                                                                                             |
-| EQ(A)        | A と一致するデータを取得する。                                                                                                                                            |
-| NE(A)        | A と一致しないデータを取得する。 <span style="color:skyblue;">(未実装)</span>                                                                                             |
-| LT(A)        | A より小さいデータを取得する。 <span style="color:skyblue;">(未実装)</span>                                                                                               |
-| LE(A)        | A 以下のデータを取得する。 <span style="color:skyblue;">(未実装)</span>                                                                                                   |
-| GT(A)        | A より大きいデータを取得する。 <span style="color:skyblue;">(未実装)</span>                                                                                               |
-| GE(A)        | A 以上のデータを取得する。 <span style="color:skyblue;">(未実装)</span>                                                                                                   |
-| LIKE(A)      | A とパターンマッチングするデータを取得する。<span style="color:skyblue;">(未実装)</span><br>以下の特殊文字が利用可能。<br>%:任意の 0 文字以上の文字列<br>\_:任意の 1 文字 |
+| 構文  | 説明                           |
+| ----- | ------------------------------ |
+| EQ(A) | A と一致するデータを取得する。 |
+
+> **注意**: set_valuesで参照データが存在しない場合や、JSONPath抽出で0件（該当データなし）の場合は、エラーや異常ではなく正常系の分岐として扱われます。空データや空文字で処理を継続し、エラーや警告ログは出力されません。
 
 #### Desired Properties の記入例
 
@@ -210,14 +204,13 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 {}
 ```
 
-
 ### startupOrder
 
 #### startupOrder の値
 
-| JSON Key      | Type    | Required | Default | Recommend | Description |
-| ------------- | ------- | -------- | ------- | --------- | ----------- |
-| startupOrder  | uint    |  | 4294967295 | 400 | モジュールの起動順序。数字が小さいほど先に起動される。<br>["0"から"4294967295"] |
+| JSON Key     | Type   | Required | Conditions                   | Default    | Recommend | Description                                            |
+| ------------ | ------ | -------- | ---------------------------- | ---------- | --------- | ------------------------------------------------------ |
+| startupOrder | number |          | 0 以上 4294967295 以下の整数 | 4294967295 | 400       | モジュールの起動順序。数字が小さいほど先に起動される。 |
 
 #### startupOrder の記入例
 
@@ -231,7 +224,7 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 ### Message Body
 
-任意のJSON形式データ。<br>
+任意のJSON形式データ。  
 実行アプリケーションの入力データとして使用。
 
 ### Message Properties
@@ -240,22 +233,88 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 | ------------ | -------------- |
 | process_name | 実行プロセス名 |
 
+### Message の例
+
+```json
+{
+  "Body": {
+    "RecordList": [
+      {
+        "RecordHeader": [
+          "test_01.csv",
+          "1"
+        ],
+        "RecordData": [
+          "2",
+          "5"
+        ]
+      }
+    ],
+    "target": {
+      "machinenumber": "2"
+    }
+  },
+  "Properties": {
+    "process_name": "pre_process",
+    "die_number": "5"
+  }
+}
+```
+
 ## Http Application実行
 
 ### リクエスト
 
-以下の手順でurlを決定し、Http Applicationを実行する。<br>
-① Desired Propertiesのprocessesから"process_name"が<br>
-  受信メッセージのMessage Propertiesの"process_name"と一致する"プロセス設定"を選択。<br>
-② ①の実行アプリケーション("application")の"url"と"replace_params"を取り出し、<br>
-  "replace_params"の設定に従い、urlの文字列を変換する。<br>
+以下の手順でurlを決定し、Http Applicationを実行する。  
+① モジュールツインのprocessesから"process_name"が受信メッセージのMessage Propertiesの"process_name"と一致する"プロセス設定"を選択。  
+② ①の実行アプリケーション("application")の"url"と"replace_params"を取り出し、"replace_params"の設定に従い、urlの文字列を変換する。  
 ③ ②のurlに対し、受信メッセージのBodyをリクエストデータとしてアクセスする。
+
+#### HTTPリクエスト仕様
+
+* HTTPメソッド: **POST**
+* Content-Type: **application/json**
+
+リクエストBodyはJSON形式で送信する。
+
+#### リクエスト例(Body)
+
+```json
+{
+  "RecordList": [
+    {
+      "RecordHeader": [
+        "test_01.csv",
+        "1"
+      ],
+      "RecordData": [
+        "2",
+        "5"
+      ]
+    }
+  ],
+  "target": {
+    "machinenumber": "2"
+  }
+}
+```
 
 ### レスポンス
 
-任意のJSON形式データ。ただし下記が含まれること。<br>
-* 後処理でステータスの判定がある場合、判定対象のデータ。<br>
+任意のJSON形式データ。ただし下記が含まれること。  
+
+* 後処理でステータスの判定がある場合、判定対象のデータ。
 * 次実行プロセスの指定がある場合、次実行プロセスの入力データとして必要な情報。
+
+#### レスポンス例(Body)
+
+```json
+{
+  "info_data": {
+    "result": "9"
+  }
+}
+```
 
 ## 送信メッセージ
 
@@ -263,21 +322,66 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 ### Message Body
 
-実行アプリケーションのレスポンスに対し以下の値を追加または更新する。
+受信メッセージのBody・実行アプリケーションのレスポンスBody・モジュールツインのset_valuesで設定したkeyとvalue（type="Body"時のみ）を送信する。  
+set_valuesで設定したkeyが、受信メッセージのBody・実行アプリケーションのレスポンスBodyに存在する場合、set_valuesで設定したvalueで上書きされる。
 
-| JSON Key            | Type   | Description |
-| ------------------- | ------ | ----------- |
-| Desired Properties の "set_values" で設定した key(JSONPath)<br>※type="Body"のみ対象 | string | Desired Properties の "set_values" で設定した value |
+```json
+  "Body": {
+      <受信メッセージのBody> ,
+      <実行アプリケーションのレスポンスBody>,
+      <モジュールツインのset_valuesで指定したkey,value>
+  }
+  ```
 
 <a id="SendMessageProperties"></a>
 
 ### Message Properties
 
-| Key                                                                             | Description                                         |
-| ------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Desired Properties の "set_values" で設定した key<br>※type="Properties"のみ対象 | Desired Properties の "set_values" で設定した value |
-| process_name                                                                    | next_process の指定時に設定, 未指定時は削除する |
+受信メッセージのPropertiesとモジュールツインのset_valuesで設定したkeyとvalue（type="Properties"時のみ）を送信する。  
+set_valuesで設定したkeyが、受信メッセージのPropertiesに存在する場合、set_valuesで設定したvalueで上書きされる。  
+process_nameプロパティは、next_processが指定されている場合はその値で設定され、next_processが未指定の場合は削除される。
 
+```json
+  "Properties": {
+      <受信メッセージのProperties> ,
+      <モジュールツインのset_valuesで指定したkey,value>,
+      <next_processで指定されたprocess_name>
+  }
+  ```
+
+### Message の例
+
+```json
+{
+  "Body": {
+    "RecordList": [
+      {
+        "RecordHeader": [
+          "test_01.csv",
+          "1"
+        ],
+        "RecordData": [
+          "2",
+          "5"
+        ]
+      }
+    ],
+    "target": {
+      "machinenumber": "2"
+    },
+    "info_data": {
+      "result": "9"
+    },
+    "RESULT": {
+      "status": "10"
+    }
+  },
+  "Properties": {
+    "process_name": "monitoring",
+    "die_number": "5"
+  }
+}
+```
 
 ## Direct Method
 
@@ -355,13 +459,13 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 ## ログ出力内容
 
-| LogLevel | 出力概要 |
-| -------- | -------- |
-| error    | [初期化/desired更新/desired取り込み/メッセージ受信]失敗         |
-| warn     | エッジランタイムとの接続リトライ失敗<br>環境変数の1部値不正         |
-| info     | 環境変数の値<br>desired更新通知<br>環境変数の値未設定のためDefault値適用<br>メッセージ[送信/受信]通知         |
-| debug    | 無し     |
-| trace    | メソッドの開始・終了<br>受信メッセージBody  |
+| LogLevel | 出力概要                                                                                                                                                                                 |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| error    | [初期化/リソース解放/モジュールツイン更新/メッセージ送信/メッセージ受信]失敗<br>[環境変数/モジュールツイン]の必須項目未設定<br>[環境変数/モジュールツイン]がConditionsまたはType制約違反 |
+| warn     | エッジランタイムとの接続リトライ失敗                                                                                                                                                     |
+| info     | [環境変数/モジュールツイン]の値<br>モジュールツイン更新通知<br>[環境変数/モジュールツイン]の省略可能項目未設定のためDefault値適用<br>メッセージ[送信/受信]通知                           |
+| debug    | 無し                                                                                                                                                                                     |
+| trace    | リソース解放済み通知<br>メソッドの開始・終了<br>受信メッセージBody                                                                                                                       |
 
 ## ユースケース
 
@@ -369,12 +473,32 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 
 ### ケース ①
 
-測定データを送信して前処理アプリケーションを実行。入力メッセージに処理ステータスを付与して出力する。
+測定データを送信して前処理アプリケーションを実行する。受信メッセージに処理ステータスを付与して送信する。  
 
 ![usecase1 flowchart](./docs/img/usecase1_flowchart.drawio.png)
 ![usecase1 diagram](./docs/img/usecase1_diagram.drawio.png)
 
-#### Desired Properties
+#### 起動順序 startupOrder
+
+| 名称         | 値  |
+| ------------ | --- |
+| startupOrder | 400 |
+
+#### 環境変数
+
+| 名称              | 値    |
+| ----------------- | ----- |
+| TransportProtocol | Amqp  |
+| LogLevel          | debug |
+| HttpTimeout       | 10    |
+
+#### コンテナーの作成オプション Create Option
+
+```json
+{}
+```
+
+#### モジュールツインの設定
 
 ```json
 {
@@ -419,70 +543,125 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 }
 ```
 
-* 受信メッセージ
+#### 受信メッセージ
 
-  ```json
-  {
-    "Body": {
-      "RecordList": [
-        {
-          "RecordHeader": [
-            "test_01.csv",
-            "1"
-          ],
-          "RecordData": [
-            "2",
-            "5"
-          ]
-        }
-      ]
-    },
-    "Property": {
-      "process_name": "pre_process"
-    }
+```json
+{
+  "Body": {
+    "RecordList": [
+      {
+        "RecordHeader": [
+          "test_01.csv",
+          "1"
+        ],
+        "RecordData": [
+          "2",
+          "5"
+        ]
+      }
+    ]
+  },
+  "Properties": {
+    "process_name": "pre_process"
   }
-  ```
+}
+```
 
-* 実行アプリケーションレスポンス
+#### Http Application実行のリクエスト
 
-  url: `http://Preprocess-2-5:5001/score`のレスポンス例
+* HTTPメソッド: **POST**
+* Content-Type: **application/json**
+* URL: `http://Preprocess-2-5:5001/score`
 
-  ```json
-  {
+リクエストBody
+
+```json
+{
+  "RecordList": [
+    {
+      "RecordHeader": [
+        "test_01.csv",
+        "1"
+      ],
+      "RecordData": [
+        "2",
+        "5"
+      ]
+    }
+  ]
+}
+```
+
+#### Http Application実行のレスポンス
+
+```json
+{
+  "info_data": {
+    "result": "1"
+  }
+}
+```
+
+#### 送信メッセージ
+
+output トピック名: "output1"
+
+```json
+{
+  "Body": {
+    "RecordList": [
+      {
+        "RecordHeader": [
+          "test_01.csv",
+          "1"
+        ],
+        "RecordData": [
+          "2",
+          "5"
+        ]
+      }
+    ],
     "info_data": {
       "result": "1"
-    }
-  }
-  ```
-
-* 送信メッセージ
-
-  output トピック名: "output1"
-
-  ```json
-  {
-    "Body": {
-      "info_data": {
-         "result": "1"
-      },
-      "RESULT": {
-        "status": "1"
-      }
     },
-    "Property": {}
-  }
-  ```
+    "RESULT": {
+      "status": "1"
+    }
+  },
+  "Properties": {}
+}
+```
 
 <a id="Usecase2"></a>
 
 ### ケース ②
 
-測定データを送信して監視アプリケーションを実行。アプリケーションの戻り値が"1"の場合、メールを送信する
+測定データを送信して監視アプリケーションを実行する。アプリケーションの戻り値が"1"の場合のみ、メッセージを送信する。
 
 ![usecase2 flowchart](./docs/img/usecase2_flowchart.drawio.png)
 ![usecase2 diagram](./docs/img/usecase2_diagram.drawio.png)
 
-#### Desired Properties
+#### 起動順序 startupOrder
+
+| 名称         | 値  |
+| ------------ | --- |
+| startupOrder | 400 |
+
+#### 環境変数
+
+| 名称              | 値    |
+| ----------------- | ----- |
+| TransportProtocol | Amqp  |
+| LogLevel          | debug |
+| HttpTimeout       | 10    |
+
+#### コンテナーの作成オプション Create Option
+
+```json
+{}
+```
+
+#### モジュールツインの設定
 
 ```json
 {
@@ -517,35 +696,71 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 }
 ```
 
-* 受信メッセージ
+#### 受信メッセージ
 
-  ```json
-  {
-    "Body": {
-      "RecordList": [
-        {
-          "RecordHeader": [
-            "test_01.csv",
-            "1"
-          ],
-          "RecordData": [
-            "2"
-          ]
-        }
-      ]
-    },
-    "Property": {
-      "process_name": "monitoring"
-    }
+```json
+{
+  "Body": {
+    "RecordList": [
+      {
+        "RecordHeader": [
+          "test_01.csv",
+          "1"
+        ],
+        "RecordData": [
+          "2"
+        ]
+      }
+    ]
+  },
+  "Properties": {
+    "process_name": "monitoring"
   }
-  ```
+}
+```
 
-* 実行アプリケーションレスポンス
+#### Http Application実行のリクエスト
 
-  url: `http://Monitoring-2:5001`のレスポンス例
+* HTTPメソッド: **POST**
+* Content-Type: **application/json**
+* URL: `http://Monitoring-2:5001`
 
-  ```json
-  {
+リクエストBody
+
+```json
+{
+  "RecordList": [
+    {
+      "RecordHeader": [
+        "test_01.csv",
+        "1"
+      ],
+      "RecordData": [
+        "2"
+      ]
+    }
+  ]
+}
+```
+
+#### Http Application実行のレスポンス
+
+```json
+{
+  "info_data": {
+    "result": "1"
+  }
+}
+```
+
+#### 送信メッセージ
+
+output トピック名: "out_continue"  
+※後処理設定の条件によりレスポンスのinfo_data.resultが"1"以外の場合、メッセージは送信されない。
+
+```json
+{
+  "Body": {
     "RecordList": [
       {
         "RecordHeader": [
@@ -560,46 +775,42 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
     "info_data": {
       "result": "1"
     }
-  }
-  ```
-
-* 送信メッセージ
-  output トピック名: "out_continue"
-
-  ```json
-  {
-    "Body": {
-      "RecordList": [
-        {
-          "RecordHeader": [
-            "test_01.csv",
-            "1"
-          ],
-          "RecordData": [
-            "2"
-          ]
-        }
-      ],
-      "info_data": {
-      "result": "1"
-      }
-    },
-    "Property": {}
-  }
-  ```
-
-  → 後のルーティングでメールを送信
+  },
+  "Properties": {}
+}
+```
 
 <a id="Usecase3"></a>
 
 ### ケース ③
 
-測定データを送信して予測アプリケーションを実行し出力を自身のモジュールで受けなおし、設備保護アプリケーションを実行する<br>出力には設備保護アプリケーションの結果ごとのテキストをセットしてDBに格納
+測定データを送信して予測アプリケーションを実行し出力を自身のモジュールで受けなおし、設備保護アプリケーションを実行する。  
+出力には設備保護アプリケーションの結果ごとのテキストをセットしてDBに格納する。
 
 ![usecase3 flowchart](./docs/img/usecase3_flowchart.drawio.png)
 ![usecase3 diagram](./docs/img/usecase3_diagram.drawio.png)
 
-#### Desired Properties
+#### 起動順序 startupOrder
+
+| 名称         | 値  |
+| ------------ | --- |
+| startupOrder | 400 |
+
+#### 環境変数
+
+| 名称              | 値    |
+| ----------------- | ----- |
+| TransportProtocol | Amqp  |
+| LogLevel          | debug |
+| HttpTimeout       | 10    |
+
+#### コンテナーの作成オプション Create Option
+
+```json
+{}
+```
+
+#### モジュールツインの設定
 
 ```json
 {
@@ -689,7 +900,9 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
   ]
 }
 ```
-#### routes
+
+##### ルート設定
+
 ```json
 {
   "input1": "FROM /messages/modules/送信元/outputs/output INTO BrokeredEndpoint(\"/modules/ApplicationController/inputs/input\")",
@@ -700,33 +913,74 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
 }
 ```
 
-* 受信メッセージ
-  ```json
-  {
-    "Body": {
-      "RecordList": [
-        {
-          "RecordHeader": [
-            "test_01.csv",
-            "1"
-          ],
-          "RecordData": [
-            "2"
-          ]
-        }
-      ]
-    },
-    "Property": {
-      "process_name": "prediction"
-    }
+#### 処理の流れ例
+
+##### 受信メッセージ
+
+```json
+{
+  "Body": {
+    "RecordList": [
+      {
+        "RecordHeader": [
+          "test_01.csv",
+          "1"
+        ],
+        "RecordData": [
+          "2"
+        ]
+      }
+    ]
+  },
+  "Properties": {
+    "process_name": "prediction"
   }
-  ```
+}
+```
 
-* 実行アプリケーションレスポンス
-  url: `http://Prediction-2:5001`のレスポンス例
+##### predictionプロセス: Http Application実行のリクエスト
 
-  ```json
-  {
+* HTTPメソッド: **POST**
+* Content-Type: **application/json**
+* URL: `http://Prediction-2:5001`
+
+リクエストBody
+
+```json
+{
+  "RecordList": [
+    {
+      "RecordHeader": [
+        "test_01.csv",
+        "1"
+      ],
+      "RecordData": [
+        "2"
+      ]
+    }
+  ]
+}
+```
+
+##### predictionプロセス: Http Application実行のレスポンス
+
+url: `http://Prediction-2:5001` のレスポンス例
+
+```json
+{
+  "info_data": {
+    "result": "1"
+  }
+}
+```
+
+##### 送信メッセージ①（受信メッセージ②）
+
+output トピック名: "out_continue"
+
+```json
+{
+  "Body": {
     "RecordList": [
       {
         "RecordHeader": [
@@ -741,13 +995,61 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
     "info_data": {
       "result": "1"
     }
+  },
+  "Properties": {
+    "process_name": "maintenance"
   }
-  ```
+}
+```
 
-  url: `http://Maintenance:5001`のレスポンス例
+##### maintenanceプロセス: Http Application実行のリクエスト
 
-  ```json
-  {
+predictionのレスポンスを受けて、maintenanceプロセスが実行される。
+
+* HTTPメソッド: **POST**
+* Content-Type: **application/json**
+* URL: `http://Maintenance:5001`
+
+リクエストBody（predictionのレスポンスと同じデータが送信される想定）
+
+```json
+{
+  "RecordList": [
+    {
+      "RecordHeader": [
+        "test_01.csv",
+        "1"
+      ],
+      "RecordData": [
+        "2"
+      ]
+    }
+  ],
+  "info_data": {
+    "result": "1"
+  }
+}
+```
+
+##### maintenanceプロセス: Http Application実行のレスポンス
+
+url: `http://Maintenance:5001` のレスポンス例
+
+```json
+{
+  "info_data": {
+    "result": "2"
+  }
+}
+```
+
+##### 送信メッセージ②
+
+output トピック名: "out_alert2"
+
+```json
+{
+  "Body": {
     "RecordList": [
       {
         "RecordHeader": [
@@ -761,65 +1063,16 @@ docker push ghcr.io/<YOUR_GITHUB_USERNAME>/applicationcontroller:<VERSION>
     ],
     "info_data": {
       "result": "2"
-    }
-  }
-  ```
-
-* 送信メッセージ
-  output トピック名: "out_continue"
-
-  ```json
-  {
-    "Body": {
-      "RecordList": [
-        {
-          "RecordHeader": [
-            "test_01.csv",
-            "1"
-          ],
-          "RecordData": [
-            "2"
-          ]
-        }
-      ],
-      "info_data": {
-        "result": "1"
-      }
     },
-    "Property": {
-      "process_name": "maintenance"
+    "RESULT": {
+      "text": "Invalid data."
     }
-  }
-  ```
+  },
+  "Properties": {}
+}
+```
 
-  output トピック名: "out_alert2"
-
-  ```json
-  {
-    "Body": {
-      "RecordList": [
-        {
-          "RecordHeader": [
-            "test_01.csv",
-            "1"
-          ],
-          "RecordData": [
-            "2"
-          ]
-        }
-      ],
-      "info_data": {
-        "result": "2"
-      },
-      "RESULT": {
-        "text": "1"
-      }
-    },
-    "Property": {}
-  }
-  ```
-
-  output トピック名: "out_change1", "out_alert1"の場合の条件は満たさないためメッセージ出力なし
+後処理設定の条件を満たさないため、output トピック名: "out_change1", "out_alert1"のメッセージは送信されない。
 
 ## Feedback
 お気づきの点があれば、ぜひIssueにてお知らせください。

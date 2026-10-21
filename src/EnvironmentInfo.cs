@@ -20,7 +20,7 @@ namespace IotedgeV2ApplicationController
 
             EnvironmentInfo env = new EnvironmentInfo();
 
-            env.HttpTimeout = Environment.GetEnvironmentVariable(ENVNAME_HTTP_TIMEOUT);
+            env.HttpTimeout = Util.GetEnvironmentVariable<string>(ENVNAME_HTTP_TIMEOUT, false, "10",condition:(value) => int.TryParse(value, out int result) && result >= 1);
 
             MyLogger.WriteLog(ILogger.LogLevel.TRACE, $"End Method: CreateInstance");
 

@@ -1,35 +1,31 @@
 using TICO.GAUDI.Commons;
+using IotedgeV2ApplicationController;
 
-namespace IotedgeV2ApplicationController.Test;
+namespace ApplicationController.Test;
 
 public class MyApplicationMain_OnMessageReceivedAsync
 {
     private readonly MyApplicationMain _app = new ();
 
-    [Fact(DisplayName = "No.70 受信メッセージ:\"Message Properties\"に\"process_name\"が存在する",
-        Skip = "関数内で利用されるMyClientFactoryのスタブ化ができず、接続先となるエンドポイントの用意が必要であることから自動テストから除外")]
-    public void Case070()
-    {
-        throw new NotImplementedException();
-    }
-
-    [Fact(DisplayName = "No.71 受信メッセージ:\"Message Properties\"に\"process_name\"が存在しない")]
-    public async Task Case071()
+    [Fact(DisplayName = "Case009_非JSON形式のメッセージを受信する")]
+    public async Task Case009()
     {
         var inputName = "input";
-        var message = new IotMessage();
+        string messageStr = "test";
+        var message = new IotMessage(messageStr);
         object? userContext = null;
         var ret = await _app.OnMessageReceivedAsync(inputName, message, userContext);
-        Assert.False(ret);
+        Assert.True(ret);
     }
 
-    [Fact(DisplayName = "No.72 例外が発生する")]
-    public async Task Case072()
+    [Fact(DisplayName = "Case010_propertiesにprocess_nameを含まないJSON形式のメッセージを受信する")]
+    public async Task Case010()
     {
         var inputName = "input";
-        IotMessage? message = null;
+        string messageStr = @"{'test':'value'}";
+        var message = new IotMessage(messageStr);
         object? userContext = null;
         var ret = await _app.OnMessageReceivedAsync(inputName, message, userContext);
-        Assert.False(ret);
+        Assert.True(ret);
     }
 }
