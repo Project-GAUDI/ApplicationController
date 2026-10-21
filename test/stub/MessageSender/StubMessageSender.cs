@@ -1,11 +1,12 @@
 using TICO.GAUDI.Commons;
 using TICO.GAUDI.Commons.Test;
+using IotedgeV2ApplicationController;
 
-namespace IotedgeV2ApplicationController.Test;
+namespace ApplicationController.Test;
 public class StubMessageSender : IMessageSender
 {
-    public  IotMessage _message  = null;
-    public  Dictionary<string, IotMessage> _allMessage  = new Dictionary<string, IotMessage>();
+    public  IotMessage? _message  = null;
+    public  Dictionary<string, IotMessage> _allMessage  = [];
     public StubMessageSender()
     {
     }

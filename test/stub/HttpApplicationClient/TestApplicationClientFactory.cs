@@ -1,13 +1,15 @@
-namespace IotedgeV2ApplicationController.Test;
+using IotedgeV2ApplicationController;
+
+namespace ApplicationController.Test;
 public class TestApplicationClientFactory : IApplicationClientFactory
 {
-    private string _status = null;
-    private string _method = null;
-    private string _response = null;
+    private string? _status = null;
+    private string? _method = null;
+    private string? _response = null;
 
-    public IApplicationClient CreateInstance(MyDesiredProperties.Process.AppSetting.Protocol protocol)
+    public IApplicationClient? CreateInstance(MyDesiredProperties.Process.AppSetting.Protocol protocol)
     {
-        TestHttpApplicationClient client = null;
+        TestHttpApplicationClient? client = null;
         switch (protocol)
         {
             case MyDesiredProperties.Process.AppSetting.Protocol.http:
@@ -40,15 +42,5 @@ public class TestApplicationClientFactory : IApplicationClientFactory
     public void SetReturnStatus(string status)
     {
         _status = status;
-    }
-
-    public void SetErrorMethod(string method)
-    {
-        _method = method;
-    }
-
-    public void SetResponse(string response)
-    {
-        _response = response;
     }
 }

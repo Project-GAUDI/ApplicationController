@@ -1,9 +1,11 @@
-namespace IotedgeV2ApplicationController.Test;
+using IotedgeV2ApplicationController;
+
+namespace ApplicationController.Test;
 class TestHttpApplicationClient : HttpApplicationClient
 {
-    private string _status = null;
-    private string _method = null;
-    private string _response = null;
+    private string? _status = null;
+    private string? _method = null;
+    private string? _response = null;
 
     public override void SetParam(string key, string value)
     {
